@@ -1,14 +1,14 @@
 Getting help with Etcher
 ========================
 
-There are various ways get support for Etcher if you experience an issue or
+There are various ways to get support for Etcher if you experience an issue or
 have an idea you'd like to share with us.
 
 Gitter
 ------
 
 We have a [Gitter chat room][gitter] for Etcher which is open to everyone,
-please come join us :). Drop us a line there and the Resin.io staff and
+please come join us :). Drop us a line there and the resin.io staff and
 community users will be happy to assist.
 
 Make sure to mention the following information to help us provide better

@@ -1,10 +1,10 @@
 Etcher
 ======
 
-> Flash OS images to SD cards & USB drives, safe & easy.
+> Flash OS images to SD cards & USB drives, safely and easily.
 
 Etcher is a powerful OS image flasher built with web technologies to ensure
-flashing an SDCard or USB drive is pleasant and safe experience. It protects
+flashing an SDCard or USB drive is a pleasant and safe experience. It protects
 you from accidentally writing to your hard-drives, ensures every byte of data
 was written correctly and much more.
 
@@ -31,7 +31,7 @@ Support
 -------
 
 If you're having any problem, please [raise an issue][newissue] on GitHub and
-the Resin.io team will be happy to help.
+the resin.io team will be happy to help.
 
 License
 -------
@@ -39,7 +39,7 @@ License
 Etcher is free software, and may be redistributed under the terms specified in
 the [license].
 
-[etcher]: http://etcher.io
+[etcher]: https://etcher.io
 [SUPPORT]: https://github.com/resin-io/etcher/blob/master/SUPPORT.md
 [CONTRIBUTING]: https://github.com/resin-io/etcher/blob/master/docs/CONTRIBUTING.md
 [CLI]: https://github.com/resin-io/etcher/blob/master/docs/CLI.md

@@ -1,7 +1,7 @@
 @echo off
 
 ::::
-:: Copyright 2016 Resin.io
+:: Copyright 2016 resin.io
 ::
 :: Licensed under the Apache License, Version 2.0 (the "License");
 :: you may not use this file except in compliance with the License.
@@ -102,10 +102,17 @@ if %ERRORLEVEL% neq 0 (
   exit /b 1
 )
 
-:: Check that asar is installed.
+:: Check that python is installed.
 where python >nul 2>nul
 if %ERRORLEVEL% neq 0 (
   echo Dependency missing: python 1>&2
+  exit /b 1
+)
+
+:: Check that 7z is installed.
+where 7z >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+  echo Dependency missing: 7z 1>&2
   exit /b 1
 )
 
@@ -124,8 +131,6 @@ if "%arch%"=="x86" (
 if "%arch%"=="x64" (
   set electron_arch=x64
 )
-
-set package_name=Etcher-win32-%arch%
 
 for /f %%i in (' "node -e ""console.log(require('./package.json').devDependencies['electron-prebuilt'])""" ') do (
   set electron_version=%%i
@@ -150,6 +155,8 @@ for /f %%i in (' "node -e ""console.log(require('./package.json').version)""" ')
 for /f %%i in (' "node -v" ') do (
   set node_version=%%i
 )
+
+set package_name=Etcher-%etcher_version%-win32-%arch%
 
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: Configure NPM to build native addons for Electron correctly
@@ -207,8 +214,10 @@ call %electron_packager% . %application_name%^
 set package_output=%output_build_directory%\%package_name%
 
 if not "%arch%"=="%electron_arch%" (
-  move %output_build_directory%\Etcher-win32-%electron_arch% %package_output%
+    move %output_build_directory%\Etcher-win32-%electron_arch% %output_build_directory%\Etcher-win32-%arch%
 )
+
+move %output_build_directory%\Etcher-win32-%arch% %package_output%
 
 :: Omit *.dll and *.node files from the asar package, otherwise
 :: `process.dlopen` and `module.require` can't load them correctly.
@@ -226,12 +235,16 @@ signtool verify /pa /v %package_output%\Etcher.exe
 
 upx -9 %package_output%\*.dll
 
+cd %package_output%^
+ && 7z a -tzip ..\installers\%package_name%.zip *^
+ && cd ..\..
+
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: Generate installer
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 set installer_tmp_output=%output_build_directory%\win32-%arch%-tmp-installer
-set installer_output=%output_directory%\Etcher-win32-%arch%.exe
+set installer_output=%output_directory%\%package_name%.exe
 
 call %electron_builder% %package_output%^
  --platform=win^

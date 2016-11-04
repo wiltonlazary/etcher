@@ -3,6 +3,30 @@ Etcher User Documentation
 
 This document contains how-tos and FAQs oriented to Etcher users.
 
+Why is my drive not bootable?
+-----------------------------
+
+Etcher copies images to drives byte by byte, without doing any transformation
+to the final device, which means images that require special treatment to be
+made bootable, like Windows images, will not work out of the box. In these
+cases, the general advice is to use software specific to those kind of
+images, usually available from the image publishers themselves.
+
+Images known to require special treatment:
+
+- Microsoft Windows (use [Windows USB/DVD Download Tool][windows-usb-tool], or
+  [Rufus][rufus]).
+
+- Windows 10 IoT (use the [Windows 10 IoT Core Dashboard][windows-iot-dashboard])
+
+How can I configure persistent storage?
+---------------------------------------
+
+Some programs, usually oriented at making GNU/Linux live USB drives, include an
+option to set persistent storage. This is currently not supported by Etcher, so
+if you require this functionality, we advise to fallback to
+[UNetbootin][unetbootin].
+
 Deactivate desktop shortcut prompt on GNU/Linux
 -----------------------------------------------
 
@@ -15,6 +39,13 @@ To deactivate this feature, `touch` any of the files listed below:
 - `$HOME/.local/share/appimagekit/no_desktopintegration`
 - `/usr/share/appimagekit/no_desktopintegration`
 - `/etc/appimagekit/no_desktopintegration`
+
+Alternatively, set the `SKIP` environment variable before executing the
+AppImage:
+
+```sh
+SKIP=1 ./Etcher-linux-<arch>.AppImage
+```
 
 Flashing Ubuntu ISOs
 --------------------
@@ -103,8 +134,8 @@ Disable update notifications
 ----------------------------
 
 You can disable update notifications, which can be useful when running Etcher
-outside a common desktop environment (like in a [Resin.io][resin.io]
-application), by setting the `ETCHER_DISABLE_UPDATES` environment variable.
+outside a common desktop environment (like in a [resin.io] application), by
+setting the `ETCHER_DISABLE_UPDATES` environment variable.
 
 In GNU/Linux and Mac OS X:
 
@@ -166,8 +197,33 @@ command as `root`, replacing `xxx` by your actual device path:
 dd if=/dev/zero of=/dev/xxx bs=512 count=1 conv=notrunc
 ```
 
+"No polkit authentication agent found" error in GNU/Linux
+----------------------------------------------------------
+
+Etcher requires an available [polkit authentication
+agent](https://wiki.archlinux.org/index.php/Polkit#Authentication_agents) in
+your system in order to show a secure password prompt dialog to perform
+elevation. Make sure you have one installed for the desktop environment of your
+choice.
+
+Running in older macOS versions
+-------------------------------
+
+Etcher GUI is based on the [Electron][electron] framework, [which only supports
+macOS 10.9 and newer versions][electron-supported-platforms].
+
+You can however, run the [Etcher CLI][etcher-cli], which should work in older
+platforms.
+
 [resin.io]: https://resin.io
 [appimage]: http://appimage.org
 [xwayland]: https://wayland.freedesktop.org/xserver.html
 [weston.ini]: http://manpages.ubuntu.com/manpages/wily/man5/weston.ini.5.html
 [diskpart]: https://technet.microsoft.com/en-us/library/cc770877(v=ws.11).aspx
+[electron]: http://electron.atom.io
+[electron-supported-platforms]: https://github.com/electron/electron/blob/master/docs/tutorial/supported-platforms.md
+[etcher-cli]: https://github.com/resin-io/etcher/blob/master/docs/CLI.md
+[windows-usb-tool]: https://www.microsoft.com/en-us/download/windows-usb-dvd-download-tool
+[rufus]: https://rufus.akeo.ie
+[unetbootin]: https://unetbootin.github.io
+[windows-iot-dashboard]: https://developer.microsoft.com/en-us/windows/iot/downloads

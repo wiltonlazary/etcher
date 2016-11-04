@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###
-# Copyright 2016 Resin.io
+# Copyright 2016 resin.io
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,9 +43,16 @@ if [ "$#" -ne 2 ]; then
 fi
 
 COMMAND=$1
-if [ "$COMMAND" != "install" ] && [ "$COMMAND" != "package" ] && [ "$COMMAND" != "appimage" ] && [ "$COMMAND" != "all" ]; then
+if [ "$COMMAND" != "install" ] && [ "$COMMAND" != "package" ] && [ "$COMMAND" != "debian" ] && [ "$COMMAND" != "appimage" ] && [ "$COMMAND" != "all" ]; then
   echo "Unknown command: $COMMAND" 1>&2
   exit 1
+fi
+
+if [ "$COMMAND" == "debian" ] || [ "$COMMAND" == "all" ]; then
+  if ! command -v electron-installer-debian 2>/dev/null; then
+    echo "Dependency missing: electron-installer-debian" 1>&2
+    exit 1
+  fi
 fi
 
 if [ "$COMMAND" == "appimage" ] || [ "$COMMAND" == "all" ]; then
@@ -70,7 +77,7 @@ APPLICATION_VERSION=`node -e "console.log(require('./package.json').version)"`
 function install {
 
   # Can be either "x64" or "ia32"
-  architecture=$1
+  local architecture=$1
 
   # Ensure native addons are compiled with the correct headers
   # See https://github.com/electron/electron/blob/master/docs/tutorial/using-native-node-modules.md
@@ -81,12 +88,12 @@ function install {
 
   rm -rf node_modules bower_components
   npm install --build-from-source
-  bower install --production
+  bower install --production --allow-root
 }
 
 function package_x86 {
-  output_directory=$1
-  output_package=$output_directory/Etcher-linux-x86
+  local output_directory=$1
+  local output_package=$output_directory/Etcher-linux-x86
 
   $ELECTRON_PACKAGER . $APPLICATION_NAME \
     --platform=linux \
@@ -100,6 +107,7 @@ function package_x86 {
     --out=$output_directory
 
   # Change ia32 suffix to x86 for consistency
+  rm -rf $output_package
   mv $output_directory/Etcher-linux-ia32 $output_package
 
   mv $output_package/Etcher $output_package/etcher
@@ -107,8 +115,8 @@ function package_x86 {
 }
 
 function package_x64 {
-  output_directory=$1
-  output_package=$output_directory/Etcher-linux-x64
+  local output_directory=$1
+  local output_package=$output_directory/Etcher-linux-x64
 
   $ELECTRON_PACKAGER . $APPLICATION_NAME \
     --platform=linux \
@@ -126,9 +134,9 @@ function package_x64 {
 }
 
 function app_dir_create {
-  source_directory=$1
-  architecture=$2
-  output_directory=$3
+  local source_directory=$1
+  local architecture=$2
+  local output_directory=$3
 
   mkdir -p $output_directory/usr/bin
   cp ./scripts/build/AppImages/AppRun-$architecture $output_directory/AppRun
@@ -139,16 +147,22 @@ function app_dir_create {
 }
 
 function installer {
-  source_directory=$1
-  architecture=$2
-  output_directory=$3
-  appdir_temporary_location=$output_directory/Etcher-linux-$architecture.AppDir
-  output_file=$output_directory/Etcher-linux-$architecture.AppImage
+  local source_directory=$1
+  local architecture=$2
+  local output_directory=$3
+  local appdir_temporary_location=$output_directory/Etcher-linux-$architecture.AppDir
+  local output_file=$output_directory/Etcher-linux-$architecture.AppImage
 
   mkdir -p $output_directory
   app_dir_create $source_directory $architecture $appdir_temporary_location
   rm -f $output_file
   ./scripts/build/AppImages/AppImageAssistant-$architecture $appdir_temporary_location $output_file
+
+  pushd $output_directory
+  zip Etcher-$APPLICATION_VERSION-linux-$architecture.zip Etcher-linux-$architecture.AppImage
+  rm Etcher-linux-$architecture.AppImage
+  popd
+
   rm -rf $appdir_temporary_location
 }
 
@@ -172,16 +186,37 @@ if [ "$COMMAND" == "package" ] || [ "$COMMAND" == "all" ]; then
   fi
 fi
 
-if [ "$COMMAND" == "appimage" ] || [ "$COMMAND" == "all" ]; then
+if [ "$COMMAND" == "debian" ] || [ "$COMMAND" == "all" ]; then
   if [ "$ARCH" == "x86" ]; then
-    # UPX fails for some reason with some other so libraries
-    # other than libnode.so in the x86 build
-    upx -9 $output_package/etcher $output_package/libnode.so
+    DEBARCH=i386
   fi
 
   if [ "$ARCH" == "x64" ]; then
-    upx -9 $output_package/etcher $output_package/*.so*
+    DEBARCH=amd64
   fi
 
-  installer etcher-release/Etcher-linux-$ARCH $ARCH etcher-release/installers
+  cp scripts/build/debian/etcher-electron.sh etcher-release/Etcher-linux-$ARCH/
+  electron-installer-debian --src etcher-release/Etcher-linux-$ARCH \
+    --dest etcher-release/installers \
+    --config scripts/build/debian/config.json \
+    --arch $DEBARCH
+  rm etcher-release/Etcher-linux-$ARCH/etcher-electron.sh
+fi
+
+if [ "$COMMAND" == "appimage" ] || [ "$COMMAND" == "all" ]; then
+  package_directory=etcher-release/Etcher-linux-$ARCH
+
+  if [ "$ARCH" == "x86" ]; then
+
+    # UPX fails for some reason with some other so libraries
+    # other than libnode.so in the x86 build
+    upx -9 $package_directory/etcher $package_directory/libnode.so
+
+  fi
+
+  if [ "$ARCH" == "x64" ]; then
+    upx -9 $package_directory/etcher $package_directory/*.so*
+  fi
+
+  installer $package_directory $ARCH etcher-release/installers
 fi
